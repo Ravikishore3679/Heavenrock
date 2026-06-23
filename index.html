@@ -1137,7 +1137,7 @@ function normalizeExpenditureRow(row) {
   return {
     id: row.id,
     date: row.date,
-    desc: row.desc,
+    descr: row.descr,
     cat: row.cat,
     amount: Number(row.amount || 0)
   };
@@ -1338,7 +1338,7 @@ function renderTodayPage() {
     expDiv.innerHTML = `<div class="table-wrap"><table>
       <thead><tr><th>Description</th><th>Category</th><th>Amount (₹)</th></tr></thead>
       <tbody>
-        ${todayExp.map(e => `<tr><td>${e.desc}</td><td>${e.cat}</td><td style="color:var(--rose);font-family:'Courier Prime',monospace">₹${fmt(e.amount)}</td></tr>`).join('')}
+        ${todayExp.map(e => `<tr><td>${e.descr}</td><td>${e.cat}</td><td style="color:var(--rose);font-family:'Courier Prime',monospace">₹${fmt(e.amount)}</td></tr>`).join('')}
         <tr class="total-row"><td colspan="2">Total</td><td style="font-family:'Courier Prime',monospace">₹${fmt(totalExp)}</td></tr>
       </tbody>
     </table></div>`;
@@ -1514,16 +1514,16 @@ async function deleteBooking(id) {
 // ── EXPENDITURE PAGE ──────────────────────────────────────────────────────────
 async function saveExpenditure() {
   const date  = document.getElementById('e-date').value;
-  const desc  = document.getElementById('e-desc').value.trim();
+  const descr  = document.getElementById('e-desc').value.trim();
   const amount= document.getElementById('e-amount').value;
   const cat   = document.getElementById('e-cat').value;
 
-  if (!date || !desc || !amount) {
+  if (!date || !descr || !amount) {
     alert('Please fill Date, Description and Amount.');
     return;
   }
 
-  const exp = { id: Date.now(), date, desc, cat, amount: parseFloat(amount) };
+  const exp = { id: Date.now(), date, descr, cat, amount: parseFloat(amount) };
   const synced = await syncExpenditureToRemote(exp);
   expenditures.push(synced || exp);
   document.getElementById('e-date').value = '';
@@ -1555,7 +1555,7 @@ function renderExpenditurePage() {
   tbody.innerHTML = list.map(e => `
     <tr>
       <td>${e.date}</td>
-      <td>${e.desc}</td>
+      <td>${e.descr}</td>
       <td><span class="badge badge-partial">${e.cat}</span></td>
       <td style="font-family:'Courier Prime',monospace;color:var(--rose)">₹${fmt(e.amount)}</td>
       <td><button class="act-btn danger" onclick="deleteExpenditure(${e.id})">🗑️</button></td>
@@ -1752,7 +1752,7 @@ function renderReport() {
         <tbody>
           ${mExps.length ? mExps.sort((a,b)=>a.date.localeCompare(b.date)).map(e => `
             <tr>
-              <td>${e.date}</td><td>${e.desc}</td>
+              <td>${e.date}</td><td>${e.descr}</td>
               <td><span class="badge badge-partial">${e.cat}</span></td>
               <td style="font-family:'Courier Prime',monospace;color:var(--rose)">₹${fmt(e.amount)}</td>
             </tr>`).join('') :
