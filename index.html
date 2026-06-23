@@ -824,6 +824,7 @@
     tbody td { color: black !important; }
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -1104,19 +1105,121 @@
 
 <script>
 // ── DATA STORE ──────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'hrgh_bookings_v2';
-const EXP_KEY     = 'hrgh_expenditure_v2';
+const SUPABASE_URL = 'https://phdblwmqysmewnwsrrck.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoZGJsd21xeXNtZXdud3NycmNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjQzNTAsImV4cCI6MjA5NzgwMDM1MH0.tU-BVu7zgozg8JR9vIQXlJnTk4KcmzA_xrYGdb026oQ';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function load(key) {
-  try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
-}
-function save(key, data) {
-  localStorage.setItem(key, JSON.stringify(data));
+function isRemoteEnabled() {
+  return SUPABASE_URL && SUPABASE_ANON_KEY;
 }
 
-let bookings     = load(STORAGE_KEY);
-let expenditures = load(EXP_KEY);
-let editingId    = null;
+function normalizeBookingRow(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    idno: row.idno,
+    checkin: row.checkin,
+    checkout: row.checkout,
+    people: Number(row.people || 0),
+    room: row.room,
+    notes: row.notes,
+    total: Number(row.total || 0),
+    advance: Number(row.advance || 0),
+    balance: Number(row.balance || 0),
+    status: row.status,
+    paymode: row.paymode,
+    createdAt: row.created_at || row.createdAt || new Date().toISOString()
+  };
+}
+
+function normalizeExpenditureRow(row) {
+  return {
+    id: row.id,
+    date: row.date,
+    desc: row.desc,
+    cat: row.cat,
+    amount: Number(row.amount || 0)
+  };
+}
+
+async function loadRemoteData() {
+  if (!isRemoteEnabled()) return;
+
+  const { data: remoteBookings, error: bookingError } = await supabaseClient
+    .from('bookings')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (bookingError) {
+    console.error('Unable to load bookings from Supabase', bookingError);
+    return;
+  }
+
+  bookings = (remoteBookings || []).map(normalizeBookingRow);
+
+  const { data: remoteExpenditures, error: expError } = await supabaseClient
+    .from('expenditures')
+    .select('*')
+    .order('date', { ascending: false });
+
+  if (expError) {
+    console.error('Unable to load expenditures from Supabase', expError);
+    return;
+  }
+
+  expenditures = (remoteExpenditures || []).map(normalizeExpenditureRow);
+}
+
+async function syncBookingToRemote(booking) {
+  if (!isRemoteEnabled()) return;
+  const { createdAt, ...payload } = booking;
+  const { data, error } = await supabaseClient.from('bookings').upsert(
+    [{
+      ...payload,
+      created_at: createdAt || new Date().toISOString()
+    }],
+    { onConflict: 'id', returning: 'representation' }
+  );
+  if (error) {
+    console.error('Supabase booking sync failed', error);
+    throw error;
+  }
+  return data && data[0] ? normalizeBookingRow(data[0]) : booking;
+}
+
+async function deleteRemoteBooking(id) {
+  if (!isRemoteEnabled()) return;
+  const { error } = await supabaseClient.from('bookings').delete().eq('id', id);
+  if (error) {
+    console.error('Supabase booking delete failed', error);
+    throw error;
+  }
+}
+
+async function syncExpenditureToRemote(exp) {
+  if (!isRemoteEnabled()) return;
+  const { error } = await supabaseClient.from('expenditures').upsert(
+    [{
+      ...exp
+    }],
+    { onConflict: 'id' }
+  );
+  if (error) console.error('Supabase expenditure sync failed', error);
+}
+
+async function deleteRemoteExpenditure(id) {
+  if (!isRemoteEnabled()) return;
+  const { error } = await supabaseClient.from('expenditures').delete().eq('id', id);
+  if (error) {
+    console.error('Supabase expenditure delete failed', error);
+    throw error;
+  }
+}
+
+let bookings = [];
+let expenditures = [];
+let editingId = null;
 
 // ── CLOCK ────────────────────────────────────────────────────────────────────
 function updateClock() {
@@ -1283,7 +1386,7 @@ function calcBalance() {
   document.getElementById('f-status').value = bal === 0 ? 'paid' : (a > 0 ? 'partial' : 'pending');
 }
 
-function saveBooking() {
+async function saveBooking() {
   const name    = document.getElementById('f-name').value.trim();
   const checkin = document.getElementById('f-checkin').value;
   const checkout= document.getElementById('f-checkout').value;
@@ -1309,7 +1412,7 @@ function saveBooking() {
   const balance = Math.max(0, parseFloat(total) - parseFloat(advance));
   const status  = document.getElementById('f-status').value;
 
-  bookings.push({
+  const booking = {
     id, name,
     phone:   document.getElementById('f-phone').value,
     idno:    document.getElementById('f-id').value,
@@ -1323,9 +1426,10 @@ function saveBooking() {
     status,
     paymode: document.getElementById('f-paymode').value,
     createdAt: new Date().toISOString()
-  });
+  };
 
-  save(STORAGE_KEY, bookings);
+  const synced = await syncBookingToRemote(booking);
+  bookings.push(synced);
   clearBookingForm();
   notice.textContent = '✅ Booking saved successfully!';
   notice.style.background = 'rgba(74,124,89,0.1)';
@@ -1368,7 +1472,7 @@ function calcEditBalance() {
   document.getElementById('em-balance').value = Math.max(0, t - a);
 }
 
-function updateBooking() {
+async function updateBooking() {
   const idx = bookings.findIndex(b => b.id === editingId);
   if (idx < 0) return;
   bookings[idx] = {
@@ -1387,7 +1491,8 @@ function updateBooking() {
     paymode: document.getElementById('em-paymode').value,
     notes:   document.getElementById('em-notes').value,
   };
-  save(STORAGE_KEY, bookings);
+  const synced = await syncBookingToRemote(bookings[idx]);
+  bookings[idx] = synced;
   closeEditModal();
   renderBookingsPage();
   renderTodayPage();
@@ -1398,16 +1503,16 @@ function closeEditModal() {
   editingId = null;
 }
 
-function deleteBooking(id) {
+async function deleteBooking(id) {
   if (!confirm('Delete this booking? This cannot be undone.')) return;
   bookings = bookings.filter(b => b.id !== id);
-  save(STORAGE_KEY, bookings);
+  await deleteRemoteBooking(id);
   renderBookingsPage();
   renderTodayPage();
 }
 
 // ── EXPENDITURE PAGE ──────────────────────────────────────────────────────────
-function saveExpenditure() {
+async function saveExpenditure() {
   const date  = document.getElementById('e-date').value;
   const desc  = document.getElementById('e-desc').value.trim();
   const amount= document.getElementById('e-amount').value;
@@ -1418,8 +1523,9 @@ function saveExpenditure() {
     return;
   }
 
-  expenditures.push({ id: Date.now(), date, desc, cat, amount: parseFloat(amount) });
-  save(EXP_KEY, expenditures);
+  const exp = { id: Date.now(), date, desc, cat, amount: parseFloat(amount) };
+  const synced = await syncExpenditureToRemote(exp);
+  expenditures.push(synced || exp);
   document.getElementById('e-date').value = '';
   document.getElementById('e-desc').value = '';
   document.getElementById('e-amount').value = '';
@@ -1427,10 +1533,10 @@ function saveExpenditure() {
   renderTodayPage();
 }
 
-function deleteExpenditure(id) {
+async function deleteExpenditure(id) {
   if (!confirm('Delete this expenditure entry?')) return;
   expenditures = expenditures.filter(e => e.id !== id);
-  save(EXP_KEY, expenditures);
+  await deleteRemoteExpenditure(id);
   renderExpenditurePage();
 }
 
@@ -1659,12 +1765,13 @@ function renderReport() {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Set today's date defaults
   const today = todayStr();
   document.getElementById('f-checkin').value  = today;
   document.getElementById('f-checkout').value = today;
   document.getElementById('e-date').value     = today;
+  await loadRemoteData();
   renderTodayPage();
 });
 </script>
