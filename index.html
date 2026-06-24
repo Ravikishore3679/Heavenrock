@@ -154,6 +154,10 @@
 
   .chart-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; }
 
+  /* sticky and mobile collapse */
+  .dashboard.sticky { position: sticky; top: 92px; z-index: 50; }
+  .dashboard.collapsed { display: none; }
+
 
   .page { display: none; }
   .page.active { display: block; }
@@ -867,6 +871,8 @@
     .form-group input, .form-group select, .form-group textarea { font-size: 13px; padding: 10px 12px; }
     .day-display { padding: 28px 20px; }
     .print-btn, .btn-primary, .btn-secondary { font-size: 12px; padding: 10px 18px; }
+    .dashboard { grid-template-columns: 1fr; }
+    .dashboard.sticky { position: static; }
   }
 
   @media print {
@@ -900,11 +906,13 @@
 
 <!-- TABS -->
 <nav class="tabs">
-  <button class="tab active" onclick="switchTab('today')">📊 Today</button>
-  <button class="tab" onclick="switchTab('bookings')">📋 All Bookings</button>
-  <button class="tab" onclick="switchTab('new-booking')">➕ New Booking</button>
-  <button class="tab" onclick="switchTab('expenditure')">💸 Expenditure</button>
-  <button class="tab" onclick="switchTab('report')">📈 Monthly Report</button>
+  <button class="tab" id="tab-dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+  <button class="tab" id="tab-today" onclick="switchTab('today')">📊 Today</button>
+  <button class="tab" id="tab-bookings" onclick="switchTab('bookings')">📋 All Bookings</button>
+  <button class="tab" id="tab-new-booking" onclick="switchTab('new-booking')">➕ New Booking</button>
+  <button class="tab" id="tab-expenditure" onclick="switchTab('expenditure')">💸 Expenditure</button>
+  <button class="tab" id="tab-report" onclick="switchTab('report')">📈 Monthly Report</button>
+  
 </nav>
 
 <main class="main">
@@ -1312,15 +1320,37 @@ updateClock();
 
 // ── TABS ─────────────────────────────────────────────────────────────────────
 function switchTab(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // clear tab active states
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  event.currentTarget.classList.add('active');
+
+  if (id === 'dashboard') {
+    const tab = document.getElementById('tab-dashboard');
+    if (tab) tab.classList.add('active');
+    try { renderDashboard(); } catch (e) {}
+    const dash = document.querySelector('.dashboard');
+    if (dash) {
+      dash.classList.remove('collapsed');
+      dash.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    return;
+  }
+
+  // hide dashboard when showing any page
+  const dashHide = document.querySelector('.dashboard');
+  if (dashHide) dashHide.classList.add('collapsed');
+
+  // show page
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  const tabEl = document.getElementById('tab-' + id);
+  if (tabEl) tabEl.classList.add('active');
 
   if (id === 'today')       renderTodayPage();
   if (id === 'bookings')    renderBookingsPage();
   if (id === 'expenditure') renderExpenditurePage();
   if (id === 'report')      initReportPage();
+  try { renderDashboard(); } catch(e){}
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
@@ -1917,11 +1947,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('f-checkout').value = today;
   document.getElementById('e-date').value     = today;
   await loadRemoteData();
-  // Render all pages and dashboard after data load
-  try { renderDashboard(); } catch(e){}
+  // Render pages and apply dashboard preference (dashboard hidden by default)
   try { renderTodayPage(); } catch(e){}
   try { renderBookingsPage(); } catch(e){}
   try { renderExpenditurePage(); } catch(e){}
+  try {
+    const dash = document.querySelector('.dashboard');
+    if (dash) {
+      dash.classList.remove('collapsed');
+      try { document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); } catch(e){}
+      try { const td = document.getElementById('tab-dashboard'); if (td) td.classList.add('active'); } catch(e){}
+    }
+  } catch(e){}
 });
 </script>
 </body>
