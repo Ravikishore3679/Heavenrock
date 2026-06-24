@@ -158,6 +158,33 @@
   .dashboard.sticky { position: sticky; top: 92px; z-index: 50; }
   .dashboard.collapsed { display: none; }
 
+  .view-only-banner {
+    background: rgba(196,92,92,0.12);
+    border: 1px solid rgba(196,92,92,0.25);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    color: #f8d7da;
+    display: none;
+    font-size: 14px;
+  }
+
+  body.view-only .view-only-banner { display: block; }
+  body.view-only #tab-new-booking,
+  body.view-only #tab-expenditure {
+    display: none;
+  }
+  body.view-only #page-new-booking .form-panel,
+  body.view-only #page-expenditure .form-panel {
+    display: none;
+  }
+  body.view-only .act-btn { display: none; }
+  body.view-only #bookings-tbody td:last-child,
+  body.view-only #bookings-tbody th:last-child,
+  body.view-only #exp-tbody td:last-child,
+  body.view-only #exp-tbody th:last-child {
+    display: none;
+  }
 
   .page { display: none; }
   .page.active { display: block; }
@@ -915,6 +942,10 @@
   
 </nav>
 
+<div id="view-only-banner" class="view-only-banner">
+  View-only mode enabled: editing and adding entries are disabled for this visitor.
+</div>
+
 <main class="main">
 
   <!-- DASHBOARD -->
@@ -1188,6 +1219,7 @@
 const SUPABASE_URL = 'https://phdblwmqysmewnwsrrck.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoZGJsd21xeXNtZXdud3NycmNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjQzNTAsImV4cCI6MjA5NzgwMDM1MH0.tU-BVu7zgozg8JR9vIQXlJnTk4KcmzA_xrYGdb026oQ';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const isViewOnly = new URLSearchParams(window.location.search).get('mode') === 'view' || new URLSearchParams(window.location.search).get('view') === '1';
 
 function isRemoteEnabled() {
   return SUPABASE_URL && SUPABASE_ANON_KEY;
@@ -1322,6 +1354,10 @@ updateClock();
 function switchTab(id) {
   // clear tab active states
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+  if (isViewOnly && (id === 'new-booking' || id === 'expenditure')) {
+    id = 'dashboard';
+  }
 
   if (id === 'dashboard') {
     const tab = document.getElementById('tab-dashboard');
@@ -1521,7 +1557,7 @@ function renderBookingsPage() {
   }
   const tbody = document.getElementById('bookings-tbody');
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="icon">📋</div><h3>No bookings found</h3><p>${filterDate ? 'No active guests on this date.' : 'Add your first booking!'}</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${isViewOnly ? 10 : 11}"><div class="empty-state"><div class="icon">📋</div><h3>No bookings found</h3><p>${filterDate ? 'No active guests on this date.' : 'No bookings available.'}</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(b => `
@@ -1536,10 +1572,10 @@ function renderBookingsPage() {
       <td style="font-family:'Courier Prime',monospace;color:var(--leaf-light)">₹${fmt(b.advance)}</td>
       <td style="font-family:'Courier Prime',monospace;color:var(--rose)">₹${fmt(b.balance)}</td>
       <td>${statusBadge(b.status)}</td>
-      <td>
+      ${isViewOnly ? '' : `<td>
         <button class="act-btn" onclick="openEditModal(${b.id})">✏️ Edit</button>
         <button class="act-btn danger" onclick="deleteBooking(${b.id})">🗑️</button>
-      </td>
+      </td>`}
     </tr>
   `).join('');
 }
@@ -1554,6 +1590,10 @@ function calcBalance() {
 }
 
 async function saveBooking() {
+  if (isViewOnly) {
+    alert('View-only mode is enabled. You cannot add bookings here.');
+    return;
+  }
   const name    = document.getElementById('f-name').value.trim();
   const checkin = document.getElementById('f-checkin').value;
   const checkout= document.getElementById('f-checkout').value;
@@ -1644,6 +1684,10 @@ function calcEditBalance() {
 }
 
 async function updateBooking() {
+  if (isViewOnly) {
+    alert('View-only mode is enabled. You cannot update bookings here.');
+    return;
+  }
   const idx = bookings.findIndex(b => b.id === editingId);
   if (idx < 0) return;
   bookings[idx] = {
@@ -1676,6 +1720,10 @@ function closeEditModal() {
 }
 
 async function deleteBooking(id) {
+  if (isViewOnly) {
+    alert('View-only mode is enabled. You cannot delete bookings here.');
+    return;
+  }
   if (!confirm('Delete this booking? This cannot be undone.')) return;
   bookings = bookings.filter(b => b.id !== id);
   await deleteRemoteBooking(id);
@@ -1686,6 +1734,10 @@ async function deleteBooking(id) {
 
 // ── EXPENDITURE PAGE ──────────────────────────────────────────────────────────
 async function saveExpenditure() {
+  if (isViewOnly) {
+    alert('View-only mode is enabled. You cannot add expenditures here.');
+    return;
+  }
   const date  = document.getElementById('e-date').value;
   const descr  = document.getElementById('e-desc').value.trim();
   const amount= document.getElementById('e-amount').value;
@@ -1708,6 +1760,10 @@ async function saveExpenditure() {
 }
 
 async function deleteExpenditure(id) {
+  if (isViewOnly) {
+    alert('View-only mode is enabled. You cannot delete expenditures here.');
+    return;
+  }
   if (!confirm('Delete this expenditure entry?')) return;
   expenditures = expenditures.filter(e => e.id !== id);
   await deleteRemoteExpenditure(id);
@@ -1941,6 +1997,9 @@ function renderReport() {
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  if (isViewOnly) {
+    document.body.classList.add('view-only');
+  }
   // Set today's date defaults
   const today = todayStr();
   document.getElementById('f-checkin').value  = today;
