@@ -211,6 +211,15 @@
     border-radius: 50%;
   }
 
+  /* ACKNOWLEDGEMENT MODAL */
+  .ack-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:120; align-items:center; justify-content:center; }
+  .ack-overlay.open { display:flex; }
+  .ack-modal { background:var(--deep); border:1px solid var(--earth); border-radius:12px; padding:20px; width:min(760px,96%); color:var(--cream); }
+  .ack-modal h3 { color:var(--gold); margin-bottom:6px; }
+  .ack-content { background:rgba(255,255,255,0.02); padding:14px; border-radius:8px; margin-bottom:12px; font-size:14px; }
+  .rules-list { margin-top:8px; padding-left:18px; color:var(--fog); }
+  .ack-buttons { display:flex; gap:8px; justify-content:flex-end; }
+
   .today-label {
     font-size: 11px;
     letter-spacing: 3px;
@@ -1203,6 +1212,29 @@
         </select>
       </div>
     </div>
+
+      <!-- ACKNOWLEDGEMENT MODAL -->
+      <div class="ack-overlay" id="ack-overlay">
+        <div class="ack-modal">
+          <button class="modal-close" onclick="closeAckModal()">✕</button>
+          <h3>Booking Acknowledgement</h3>
+          <div id="ack-content" class="ack-content"></div>
+          <div class="rules-list">
+            <strong>Rules & Important Notes</strong>
+            <ol>
+              <li>Extra person is chargeable.</li>
+              <li>Illicit activities are strictly prohibited.</li>
+              <li>Pool discipline should be maintained.</li>
+              <li>Any damages shall be paid by the customer.</li>
+            </ol>
+          </div>
+          <div class="ack-buttons" style="margin-top:12px;">
+            <button class="btn-primary" onclick="printAck()">Print</button>
+            <button class="btn-secondary" onclick="downloadAck()">Download</button>
+            <button class="btn-secondary" onclick="closeAckModal()">Close</button>
+          </div>
+        </div>
+      </div>
     <div class="form-group" style="margin-top:8px;">
       <label>Notes</label>
       <input type="text" id="em-notes">
@@ -1647,6 +1679,7 @@ async function saveBooking() {
   notice.style.borderColor = 'rgba(74,124,89,0.3)';
   notice.style.display = 'block';
   setTimeout(() => { notice.style.display = 'none'; notice.style.background = ''; notice.style.borderColor = ''; }, 3000);
+  try { showAck(synced); } catch(e){}
 }
 
 function clearBookingForm() {
@@ -1717,6 +1750,71 @@ async function updateBooking() {
 function closeEditModal() {
   document.getElementById('edit-modal').classList.remove('open');
   editingId = null;
+}
+
+// ── ACKNOWLEDGEMENT HELPERS ─────────────────────────────────────────────────
+let _lastAckHtml = '';
+function showAck(b) {
+  const content = document.getElementById('ack-content');
+  const now = new Date();
+  const headerDate = now.toLocaleDateString('en-IN');
+  content.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div>
+        <div style="font-weight:700">Heaven Rock — Booking Acknowledgement</div>
+        <div style="font-size:12px;color:var(--fog)">Booking ID: ${b.id}</div>
+      </div>
+      <div style="text-align:right;font-family:'Courier Prime',monospace;color:var(--gold)">${headerDate}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div><strong>Name:</strong> ${b.name}</div>
+      <div><strong>Phone:</strong> ${b.phone || '—'}</div>
+      <div><strong>Check-In:</strong> ${b.checkin}</div>
+      <div><strong>Check-Out:</strong> ${b.checkout}</div>
+      <div><strong>No. of People:</strong> ${b.people}</div>
+      <div><strong>Advance Paid:</strong> ₹${fmt(b.advance)}</div>
+      <div><strong>Pending Amount:</strong> ₹${fmt(b.balance)}</div>
+    </div>
+  `;
+
+  // build printable HTML
+  const rulesHtml = `
+    <ol>
+      <li>Extra person is chargeable.</li>
+      <li>Illicit activities are strictly prohibited.</li>
+      <li>Pool discipline should be maintained.</li>
+      <li>Any damages shall be paid by the customer.</li>
+    </ol>`;
+  _lastAckHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Booking Ack ${b.id}</title><style>body{font-family:Inter,Arial,sans-serif;padding:20px;color:#111}h1{color:#b5622a}table{width:100%;border-collapse:collapse;margin-top:8px}td,th{padding:6px 4px}</style></head><body><h1>Heaven Rock — Booking Acknowledgement</h1><div>Booking ID: ${b.id} · Date: ${headerDate}</div><hr>${content.innerHTML}<h3 style="margin-top:12px">Rules & Important Notes</h3>${rulesHtml}</body></html>`;
+
+  document.getElementById('ack-overlay').classList.add('open');
+}
+
+function closeAckModal() {
+  document.getElementById('ack-overlay').classList.remove('open');
+}
+
+function printAck() {
+  if (!_lastAckHtml) return alert('No acknowledgement available');
+  const w = window.open('', '_blank');
+  w.document.open();
+  w.document.write(_lastAckHtml);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 300);
+}
+
+function downloadAck() {
+  if (!_lastAckHtml) return alert('No acknowledgement available');
+  const blob = new Blob([_lastAckHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `booking-${new Date().getTime()}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 async function deleteBooking(id) {
