@@ -922,6 +922,7 @@
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -1788,6 +1789,22 @@ function showAck(b) {
   _lastAckHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Booking Ack ${b.id}</title><style>body{font-family:Inter,Arial,sans-serif;padding:20px;color:#111}h1{color:#b5622a}table{width:100%;border-collapse:collapse;margin-top:8px}td,th{padding:6px 4px}</style></head><body><h1>Heaven Rock — Booking Acknowledgement</h1><div>Booking ID: ${b.id} · Date: ${headerDate}</div><hr>${content.innerHTML}<h3 style="margin-top:12px">Rules & Important Notes</h3>${rulesHtml}</body></html>`;
 
   document.getElementById('ack-overlay').classList.add('open');
+  // Auto-generate PDF and download (user requested automatic generation)
+  const autoGeneratePdf = true;
+  if (autoGeneratePdf && window.html2pdf) {
+    const wrapper = document.createElement('div');
+    wrapper.style.padding = '20px';
+    wrapper.style.background = '#fff';
+    wrapper.style.color = '#111';
+    wrapper.innerHTML = `<div style="font-family:Inter,Arial,sans-serif;color:#111"><h1 style=\"color:#b5622a\">Heaven Rock — Booking Acknowledgement</h1><div>Booking ID: ${b.id} · Date: ${headerDate}</div><hr>${content.innerHTML}<h3 style=\"margin-top:12px\">Rules & Important Notes</h3>${rulesHtml}</div>`;
+    // generate PDF
+    try {
+      html2pdf().set({ margin:0.5, filename:`booking-${b.id}.pdf`, html2canvas:{scale:2} }).from(wrapper).save().then(()=>{
+        // optionally close modal after generation
+        // closeAckModal();
+      }).catch(()=>{});
+    } catch(e){}
+  }
 }
 
 function closeAckModal() {
