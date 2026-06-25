@@ -214,11 +214,19 @@
   /* ACKNOWLEDGEMENT MODAL */
   .ack-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:120; align-items:center; justify-content:center; }
   .ack-overlay.open { display:flex; }
-  .ack-modal { background:var(--deep); border:1px solid var(--earth); border-radius:12px; padding:20px; width:min(760px,96%); color:var(--cream); }
-  .ack-modal h3 { color:var(--gold); margin-bottom:6px; }
-  .ack-content { background:rgba(255,255,255,0.02); padding:14px; border-radius:8px; margin-bottom:12px; font-size:14px; }
-  .rules-list { margin-top:8px; padding-left:18px; color:var(--fog); }
-  .ack-buttons { display:flex; gap:8px; justify-content:flex-end; }
+  .ack-modal { background:linear-gradient(135deg, #f5efe6 0%, #f9f6f1 100%); border:2px solid #b5622a; border-radius:16px; padding:32px; width:min(820px,96%); color:#1a1614; box-shadow:0 20px 60px rgba(0,0,0,0.3); max-height:90vh; overflow-y:auto; }
+  .ack-modal h3 { color:#b5622a; margin-bottom:16px; font-family:'Playfair Display',serif; font-size:20px; font-weight:700; }
+  .ack-content { background:rgba(181,98,42,0.08); padding:18px; border-radius:12px; margin-bottom:16px; font-size:14px; line-height:1.6; border-left:4px solid #b5622a; }
+  .ack-content strong { color:#241e1b; }
+  .ack-content div { margin-bottom:10px; }
+  .rules-list { margin-top:16px; padding:16px; background:rgba(212,168,83,0.1); border-radius:12px; color:#241e1b; font-size:13px; line-height:1.8; }
+  .rules-list strong { color:#b5622a; display:block; margin-top:12px; margin-bottom:6px; font-family:'Playfair Display',serif; }
+  .rules-list ol { margin-left:20px; }
+  .rules-list li { margin-bottom:8px; }
+  .rules-list ul { margin-left:16px; margin-top:4px; }
+  .rules-list a { color:#2e6b8a; text-decoration:none; font-weight:500; }
+  .rules-list a:hover { text-decoration:underline; }
+  .ack-buttons { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
 
   .today-label {
     font-size: 11px;
@@ -1790,23 +1798,43 @@ let _lastAckHtml = '';
 function showAck(b) {
   const content = document.getElementById('ack-content');
   const now = new Date();
-  const headerDate = now.toLocaleDateString('en-IN');
+  const headerDate = now.toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   content.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div>
-        <div style="font-weight:700">Heaven Rock — Booking Acknowledgement</div>
-        <div style="font-size:12px;color:var(--fog)">Booking ID: ${b.id}</div>
-      </div>
-      <div style="text-align:right;font-family:'Courier Prime',monospace;color:var(--gold)">${headerDate}</div>
+    <div style="text-align:center;margin-bottom:16px;padding-bottom:16px;border-bottom:2px solid #b5622a">
+      <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:900;color:#b5622a;margin-bottom:4px">⛰️ Heaven Rock</div>
+      <div style="font-size:12px;letter-spacing:2px;color:#3d2f27;text-transform:uppercase;margin-bottom:8px">Guest House — Booking Acknowledgement</div>
+      <div style="font-family:'Courier Prime',monospace;font-size:13px;color:#241e1b">Booking ID: #${b.id} · Date: ${headerDate}</div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div><strong>Name:</strong> ${b.name}</div>
-      <div><strong>Phone:</strong> ${b.phone || '—'}</div>
-      <div><strong>Check-In:</strong> ${b.checkin}</div>
-      <div><strong>Check-Out:</strong> ${b.checkout}</div>
-      <div><strong>No. of People:</strong> ${b.people}</div>
-      <div><strong>Advance Paid:</strong> ₹${fmt(b.advance)}</div>
-      <div><strong>Pending Amount:</strong> ₹${fmt(b.balance)}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div style="padding:12px;background:rgba(181,98,42,0.06);border-radius:8px">
+        <div style="font-size:11px;letter-spacing:1px;color:#3d2f27;text-transform:uppercase;margin-bottom:4px">Guest Details</div>
+        <div style="margin-bottom:6px"><span style="color:#3d2f27;font-weight:600">Name:</span> ${b.name}</div>
+        <div style="margin-bottom:6px"><span style="color:#3d2f27;font-weight:600">Phone:</span> ${b.phone || '—'}</div>
+        <div style="margin-bottom:6px"><span style="color:#3d2f27;font-weight:600">ID Number:</span> ${b.idno || '—'}</div>
+      </div>
+      <div style="padding:12px;background:rgba(181,98,42,0.06);border-radius:8px">
+        <div style="font-size:11px;letter-spacing:1px;color:#3d2f27;text-transform:uppercase;margin-bottom:4px">Stay Details</div>
+        <div style="margin-bottom:6px"><span style="color:#3d2f27;font-weight:600">Check-In:</span> ${b.checkin}</div>
+        <div style="margin-bottom:6px"><span style="color:#3d2f27;font-weight:600">Check-Out:</span> ${b.checkout}</div>
+        <div style="margin-bottom:6px"><span style="color:#3d2f27;font-weight:600">No. of People:</span> ${b.people} pax</div>
+      </div>
+    </div>
+    <div style="padding:12px;background:rgba(74,124,89,0.1);border-radius:8px;border-left:4px solid #4a7c59">
+      <div style="font-size:11px;letter-spacing:1px;color:#3d2f27;text-transform:uppercase;margin-bottom:8px">Payment Summary</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div style="text-align:center">
+          <div style="font-family:'Courier Prime',monospace;font-size:16px;font-weight:700;color:#4a7c59">₹${fmt(b.total)}</div>
+          <div style="font-size:10px;color:#3d2f27;letter-spacing:0.5px">Total Amount</div>
+        </div>
+        <div style="text-align:center;border-left:1px solid rgba(181,98,42,0.2);border-right:1px solid rgba(181,98,42,0.2)">
+          <div style="font-family:'Courier Prime',monospace;font-size:16px;font-weight:700;color:#4a7c59">₹${fmt(b.advance)}</div>
+          <div style="font-size:10px;color:#3d2f27;letter-spacing:0.5px">Advance Paid</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Courier Prime',monospace;font-size:16px;font-weight:700;color:#c45c5c">₹${fmt(b.balance)}</div>
+          <div style="font-size:10px;color:#3d2f27;letter-spacing:0.5px">Pending Amount</div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -1850,25 +1878,19 @@ function showAck(b) {
         </ul>
       </li>
     </ol>`;
-  _lastAckHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Booking Ack ${b.id}</title><style>body{font-family:Inter,Arial,sans-serif;padding:20px;color:#111}h1{color:#b5622a}table{width:100%;border-collapse:collapse;margin-top:8px}td,th{padding:6px 4px}</style></head><body><h1>Heaven Rock — Booking Acknowledgement</h1><div>Booking ID: ${b.id} · Date: ${headerDate}</div><hr>${content.innerHTML}<h3 style="margin-top:12px">Rules & Important Notes</h3>${rulesHtml}</body></html>`;
+  _lastAckHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Booking Ack ${b.id}</title><style>@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap');body{font-family:'Inter',sans-serif;padding:40px;color:#241e1b;background:linear-gradient(135deg,#f5efe6 0%,#f9f6f1 100%);line-height:1.6}h1{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#b5622a;margin-bottom:4px;text-align:center;margin-top:0}.header{text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #b5622a}.header-sub{font-size:12px;letter-spacing:2px;color:#3d2f27;text-transform:uppercase;margin-bottom:8px}.booking-id{font-family:'Courier Prime',monospace;font-size:13px;color:#241e1b}.details-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}.details-box{padding:14px;background:rgba(181,98,42,0.06);border-radius:8px;border-left:3px solid #b5622a}.details-box-title{font-size:11px;letter-spacing:1.5px;color:#3d2f27;text-transform:uppercase;margin-bottom:8px;font-weight:600}.details-item{margin-bottom:8px;font-size:13px;line-height:1.5}.details-label{color:#3d2f27;font-weight:600}.payment-summary{padding:16px;background:rgba(74,124,89,0.12);border-radius:8px;border-left:4px solid #4a7c59;margin:20px 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}.payment-item{text-align:center}.payment-amount{font-family:'Courier Prime',monospace;font-size:18px;font-weight:700;color:#4a7c59;margin-bottom:4px}.payment-label{font-size:11px;color:#3d2f27;letter-spacing:0.5px}.rules-section{margin-top:24px;padding:20px;background:rgba(212,168,83,0.1);border-radius:8px}.rules-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#b5622a;margin-bottom:12px;margin-top:0}.rules-section ol{margin-left:20px;margin-top:0}.rules-section li{margin-bottom:12px;font-size:13px;line-height:1.6}.rules-section strong{color:#b5622a;font-weight:600}.rules-section ul{margin-left:16px;margin-top:6px;margin-bottom:0}.rules-section a{color:#2e6b8a;text-decoration:none;font-weight:500}.footer{margin-top:24px;padding-top:16px;border-top:1px solid rgba(181,98,42,0.2);text-align:center;font-size:11px;color:#3d2f27;line-height:1.6}</style></head><body><div class=\"header\"><h1>⛰️ Heaven Rock</h1><div class=\"header-sub\">Guest House — Booking Acknowledgement</div><div class=\"booking-id\">Booking ID: #${b.id} · Date: ${headerDate}</div></div><div class=\"details-grid\"><div class=\"details-box\"><div class=\"details-box-title\">Guest Details</div><div class=\"details-item\"><span class=\"details-label\">Name:</span> ${b.name}</div><div class=\"details-item\"><span class=\"details-label\">Phone:</span> ${b.phone || '—'}</div><div class=\"details-item\"><span class=\"details-label\">ID Number:</span> ${b.idno || '—'}</div></div><div class=\"details-box\"><div class=\"details-box-title\">Stay Details</div><div class=\"details-item\"><span class=\"details-label\">Check-In:</span> ${b.checkin}</div><div class=\"details-item\"><span class=\"details-label\">Check-Out:</span> ${b.checkout}</div><div class=\"details-item\"><span class=\"details-label\">No. of People:</span> ${b.people} pax</div></div></div><div class=\"payment-summary\"><div class=\"payment-item\"><div class=\"payment-amount\">₹${fmt(b.total)}</div><div class=\"payment-label\">Total Amount</div></div><div class=\"payment-item\" style=\"border-left:1px solid rgba(181,98,42,0.2);border-right:1px solid rgba(181,98,42,0.2)\"><div class=\"payment-amount\">₹${fmt(b.advance)}</div><div class=\"payment-label\">Advance Paid</div></div><div class=\"payment-item\"><div class=\"payment-amount\" style=\"color:#c45c5c\">₹${fmt(b.balance)}</div><div class=\"payment-label\">Pending Amount</div></div></div><div class=\"rules-section\"><div class=\"rules-title\">Rules & Important Notes</div>${rulesHtml}</div><div class=\"footer\">Thank you for your booking! We look forward to hosting you at Heaven Rock.</div></body></html>`;
 
   document.getElementById('ack-overlay').classList.add('open');
   // Auto-generate PDF and download (user requested automatic generation)
   const autoGeneratePdf = true;
   if (autoGeneratePdf && window.html2pdf) {
     const wrapper = document.createElement('div');
-    wrapper.style.padding = '20px';
-    wrapper.style.background = '#fff';
-    wrapper.style.color = '#111';
-    wrapper.innerHTML = `<div style="font-family:Inter,Arial,sans-serif;color:#111"><h1 style=\"color:#b5622a\">Heaven Rock — Booking Acknowledgement</h1><div>Booking ID: ${b.id} · Date: ${headerDate}</div><hr>${content.innerHTML}<h3 style=\"margin-top:12px\">Rules & Important Notes</h3>${rulesHtml}</div>`;
-    // generate PDF
-    try {
-      html2pdf().set({ margin:0.5, filename:`booking-${b.id}.pdf`, html2canvas:{scale:2} }).from(wrapper).save().then(()=>{
-        // optionally close modal after generation
-        // closeAckModal();
-      }).catch(()=>{});
-    } catch(e){}
-  }
+    wrapper.style.fontFamily = "'Inter', Arial, sans-serif";
+    wrapper.style.background = 'linear-gradient(135deg, #f5efe6 0%, #f9f6f1 100%)';
+    wrapper.style.color = '#241e1b';
+    wrapper.style.padding = '40px';
+    wrapper.style.lineHeight = '1.6';
+    wrapper.innerHTML = `<div><div style="text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #b5622a"><div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:#b5622a;margin-bottom:4px">⛰️ Heaven Rock</div><div style="font-size:12px;letter-spacing:2px;color:#3d2f27;text-transform:uppercase;margin-bottom:8px">Guest House — Booking Acknowledgement</div><div style="font-family:'Courier Prime',monospace;font-size:13px;color:#241e1b">Booking ID: #${b.id} · Date: ${headerDate}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0"><div style="padding:14px;background:rgba(181,98,42,0.06);border-radius:8px;border-left:3px solid #b5622a"><div style="font-size:11px;letter-spacing:1.5px;color:#3d2f27;text-transform:uppercase;margin-bottom:8px;font-weight:600">Guest Details</div><div style="margin-bottom:8px;font-size:13px"><span style="color:#3d2f27;font-weight:600">Name:</span> ${b.name}</div><div style="margin-bottom:8px;font-size:13px"><span style="color:#3d2f27;font-weight:600">Phone:</span> ${b.phone || '—'}</div><div style="font-size:13px"><span style="color:#3d2f27;font-weight:600">ID Number:</span> ${b.idno || '—'}</div></div><div style="padding:14px;background:rgba(181,98,42,0.06);border-radius:8px;border-left:3px solid #b5622a"><div style="font-size:11px;letter-spacing:1.5px;color:#3d2f27;text-transform:uppercase;margin-bottom:8px;font-weight:600">Stay Details</div><div style="margin-bottom:8px;font-size:13px"><span style="color:#3d2f27;font-weight:600">Check-In:</span> ${b.checkin}</div><div style="margin-bottom:8px;font-size:13px"><span style="color:#3d2f27;font-weight:600">Check-Out:</span> ${b.checkout}</div><div style="font-size:13px"><span style="color:#3d2f27;font-weight:600">No. of People:</span> ${b.people} pax</div></div></div><div style="padding:16px;background:rgba(74,124,89,0.12);border-radius:8px;border-left:4px solid #4a7c59;margin:20px 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px"><div style="text-align:center"><div style="font-family:'Courier Prime',monospace;font-size:18px;font-weight:700;color:#4a7c59;margin-bottom:4px">₹${fmt(b.total)}</div><div style="font-size:11px;color:#3d2f27;letter-spacing:0.5px">Total Amount</div></div><div style="text-align:center;border-left:1px solid rgba(181,98,42,0.2);border-right:1px solid rgba(181,98,42,0.2)"><div style="font-family:'Courier Prime',monospace;font-size:18px;font-weight:700;color:#4a7c59;margin-bottom:4px">₹${fmt(b.advance)}</div><div style="font-size:11px;color:#3d2f27;letter-spacing:0.5px">Advance Paid</div></div><div style="text-align:center"><div style="font-family:'Courier Prime',monospace;font-size:18px;font-weight:700;color:#c45c5c;margin-bottom:4px">₹${fmt(b.balance)}</div><div style="font-size:11px;color:#3d2f27;letter-spacing:0.5px">Pending Amount</div></div></div><div style="margin-top:24px;padding:20px;background:rgba(212,168,83,0.1);border-radius:8px"><div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#b5622a;margin-bottom:12px">Rules & Important Notes</div>${rulesHtml}</div><div style="margin-top:24px;padding-top:16px;border-top:1px solid rgba(181,98,42,0.2);text-align:center;font-size:11px;color:#3d2f27;line-height:1.6">Thank you for your booking! We look forward to hosting you at Heaven Rock.</div></div>`;\n    // generate PDF\n    try {\n      html2pdf().set({ margin:0.3, filename:`booking-${b.id}.pdf`, html2canvas:{scale:2} }).from(wrapper).save().then(()=>{\n        // optionally close modal after generation\n        // closeAckModal();\n      }).catch(()=>{});\n    } catch(e){}\n  }
 }
 
 function closeAckModal() {
