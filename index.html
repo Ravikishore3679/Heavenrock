@@ -1890,7 +1890,42 @@ function showAck(b) {
     wrapper.style.color = '#241e1b';
     wrapper.style.padding = '40px';
     wrapper.style.lineHeight = '1.6';
-    wrapper.innerHTML = `<div><div style="text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #b5622a"><div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:#b5622a;margin-bottom:4px">⛰️ Heaven Rock</div><div style="font-size:12px;letter-spacing:2px;color:#3d2f27;text-transform:uppercase;margin-bottom:8px">Guest House — Booking Acknowledgement</div><div style="font-family:'Courier Prime',monospace;font-size:13px;color:#241e1b">Booking ID: #${b.id} · Date: ${headerDate}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0"><div style="padding:14px;background:rgba(181,98,42,0.06);border-radius:8px;border-left:3px solid #b5622a"><div style="font-size:11px;letter-spacing:1.5px;color:#3d2f27;text-transform:uppercase;margin-bottom:8px;font-weight:600">Guest Details</div><div style="margin-bottom:8px;font-size:13px"><span style="color:#3d2f27;font-weight:600">Name:</span> ${b.name}</div><div style="margin-bottom:8px;font-size:13px"><span style="color:#3d2f27;font-weight:600">Phone:</span> ${b.phone || '—'}</div><div style="font-size:13px"><span style="color:#3d2f27;font-weight:600">ID Number:</span> ${b.idno || '—'}</div></div><div style="padding:14px;background:rgba(181,98,42,0.06);border-radius:8px;border-left:3px solid #b5622a"><div style="font-size:11px;letter-spacing:1.5px;color:#3d2f27;text-transform:uppercase;margin-bottom:8px;font-weight:600">Stay Details</div><div style="margin-bottom:8px;font-size:13px"><span style="color:#3d2f27;font-weight:600">Check-In:</span> ${b.checkin}</div><div style="margin-bottom:8px;font-size:13px"><span style="color:#3d2f27;font-weight:600">Check-Out:</span> ${b.checkout}</div><div style="font-size:13px"><span style="color:#3d2f27;font-weight:600">No. of People:</span> ${b.people} pax</div></div></div><div style="padding:16px;background:rgba(74,124,89,0.12);border-radius:8px;border-left:4px solid #4a7c59;margin:20px 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px"><div style="text-align:center"><div style="font-family:'Courier Prime',monospace;font-size:18px;font-weight:700;color:#4a7c59;margin-bottom:4px">₹${fmt(b.total)}</div><div style="font-size:11px;color:#3d2f27;letter-spacing:0.5px">Total Amount</div></div><div style="text-align:center;border-left:1px solid rgba(181,98,42,0.2);border-right:1px solid rgba(181,98,42,0.2)"><div style="font-family:'Courier Prime',monospace;font-size:18px;font-weight:700;color:#4a7c59;margin-bottom:4px">₹${fmt(b.advance)}</div><div style="font-size:11px;color:#3d2f27;letter-spacing:0.5px">Advance Paid</div></div><div style="text-align:center"><div style="font-family:'Courier Prime',monospace;font-size:18px;font-weight:700;color:#c45c5c;margin-bottom:4px">₹${fmt(b.balance)}</div><div style="font-size:11px;color:#3d2f27;letter-spacing:0.5px">Pending Amount</div></div></div><div style="margin-top:24px;padding:20px;background:rgba(212,168,83,0.1);border-radius:8px"><div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#b5622a;margin-bottom:12px">Rules & Important Notes</div>${rulesHtml}</div><div style="margin-top:24px;padding-top:16px;border-top:1px solid rgba(181,98,42,0.2);text-align:center;font-size:11px;color:#3d2f27;line-height:1.6">Thank you for your booking! We look forward to hosting you at Heaven Rock.</div></div>`;\n    // generate PDF\n    try {\n      html2pdf().set({ margin:0.3, filename:`booking-${b.id}.pdf`, html2canvas:{scale:2} }).from(wrapper).save().then(()=>{\n        // optionally close modal after generation\n        // closeAckModal();\n      }).catch(()=>{});\n    } catch(e){}\n  }
+    const pdfHTML = `<div style="text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #b5622a">
+      <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:#b5622a">⛰️ Heaven Rock</div>
+      <div style="font-size:12px;letter-spacing:2px;color:#3d2f27;text-transform:uppercase;margin-bottom:8px">Guest House — Booking Acknowledgement</div>
+      <div style="font-family:'Courier Prime',monospace;font-size:13px">Booking ID: #${b.id} · Date: ${headerDate}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0">
+      <div style="padding:14px;background:rgba(181,98,42,0.06);border-radius:8px;border-left:3px solid #b5622a">
+        <div style="font-size:11px;letter-spacing:1px;color:#3d2f27;text-transform:uppercase;margin-bottom:4px;font-weight:600">Guest Details</div>
+        <div><span style="font-weight:600">Name:</span> ${b.name}</div>
+        <div><span style="font-weight:600">Phone:</span> ${b.phone || '—'}</div>
+        <div><span style="font-weight:600">ID:</span> ${b.idno || '—'}</div>
+      </div>
+      <div style="padding:14px;background:rgba(181,98,42,0.06);border-radius:8px;border-left:3px solid #b5622a">
+        <div style="font-size:11px;letter-spacing:1px;color:#3d2f27;text-transform:uppercase;margin-bottom:4px;font-weight:600">Stay Details</div>
+        <div><span style="font-weight:600">Check-In:</span> ${b.checkin}</div>
+        <div><span style="font-weight:600">Check-Out:</span> ${b.checkout}</div>
+        <div><span style="font-weight:600">Guests:</span> ${b.people}</div>
+      </div>
+    </div>
+    <div style="padding:12px;background:rgba(74,124,89,0.1);border-radius:8px;border-left:4px solid #4a7c59;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:16px 0">
+      <div style="text-align:center"><div style="font-family:'Courier Prime',monospace;font-size:16px;font-weight:700;color:#4a7c59">₹${fmt(b.total)}</div><div style="font-size:10px">Total</div></div>
+      <div style="text-align:center;border-left:1px solid rgba(181,98,42,0.2);border-right:1px solid rgba(181,98,42,0.2)"><div style="font-family:'Courier Prime',monospace;font-size:16px;font-weight:700;color:#4a7c59">₹${fmt(b.advance)}</div><div style="font-size:10px">Advance</div></div>
+      <div style="text-align:center"><div style="font-family:'Courier Prime',monospace;font-size:16px;font-weight:700;color:#c45c5c">₹${fmt(b.balance)}</div><div style="font-size:10px">Pending</div></div>
+    </div>
+    <div style="margin:16px 0;padding:12px;background:rgba(212,168,83,0.1);border-radius:8px"><div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:#b5622a;margin-bottom:8px">Rules</div>${rulesHtml}</div>
+    <div style="text-align:center;font-size:11px;color:#3d2f27;margin-top:16px">Thank you for your booking!</div>
+  `;
+    wrapper.innerHTML = pdfHTML;
+    // generate PDF
+    try {
+      html2pdf().set({ margin:0.3, filename:`booking-${b.id}.pdf`, html2canvas:{scale:2} }).from(wrapper).save().then(()=>{
+        // optionally close modal after generation
+        // closeAckModal();
+      }).catch(()=>{});
+    } catch(e){}
+  }
 }
 
 function closeAckModal() {
