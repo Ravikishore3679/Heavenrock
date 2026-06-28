@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Heaven Rock Guest House">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#241e1b"/>
+      <stop offset="100%" stop-color="#3d2f27"/>
+    </linearGradient>
+    <linearGradient id="peak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d4a853"/>
+      <stop offset="100%" stop-color="#b5622a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="172" fill="none" stroke="#b5622a" stroke-width="18" opacity="0.45"/>
+  <path d="M126 338L232 180l58 88 38-52 58 122H126z" fill="url(#peak)"/>
+  <path d="M177 338l55-82 27 40 19-26 36 68H177z" fill="#f5efe6" opacity="0.95"/>
+  <path d="M160 374h192" stroke="#f5efe6" stroke-width="18" stroke-linecap="round" opacity="0.9"/>
+  <text x="256" y="418" text-anchor="middle" font-family="Georgia, serif" font-size="54" font-weight="700" fill="#d4a853">H</text>
+</svg>

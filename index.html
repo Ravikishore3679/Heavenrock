@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a1614">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Heaven Rock Guest House — Register</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap');
 
@@ -84,6 +89,38 @@
   .header-date {
     text-align: right;
     font-family: 'Courier Prime', monospace;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .install-btn {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: rgba(181,98,42,0.16);
+    border: 1px solid rgba(181,98,42,0.35);
+    color: var(--gold);
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .install-btn:hover {
+    background: rgba(181,98,42,0.24);
+    transform: translateY(-1px);
+  }
+
+  body.can-install .install-btn {
+    display: inline-flex;
   }
 
   .header-date .date-big {
@@ -883,7 +920,8 @@
     .resort-brand { gap: 12px; }
     .resort-name { font-size: 22px; }
     .resort-sub { font-size: 10px; letter-spacing: 2px; }
-    .header-date { width: 100%; text-align: left; }
+    .header-actions { width: 100%; justify-content: space-between; }
+    .header-date { text-align: left; }
     .tabs { padding: 0 16px; overflow-x: auto; }
     .tab { padding: 12px 16px; font-size: 12px; }
     .today-stats { grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -943,9 +981,12 @@
       <div class="resort-sub">Guest House · Resort Register</div>
     </div>
   </div>
-  <div class="header-date">
-    <div class="date-big" id="live-date"></div>
-    <div class="date-small" id="live-time"></div>
+  <div class="header-actions">
+    <button class="install-btn" id="install-button" type="button">Install App</button>
+    <div class="header-date">
+      <div class="date-big" id="live-date"></div>
+      <div class="date-small" id="live-time"></div>
+    </div>
   </div>
 </header>
 
@@ -1419,6 +1460,40 @@ async function deleteRemoteExpenditure(id) {
 let bookings = [];
 let expenditures = [];
 let editingId = null;
+let deferredInstallPrompt = null;
+
+function setupInstallPrompt() {
+  const installButton = document.getElementById('install-button');
+  if (!installButton) return;
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    document.body.classList.add('can-install');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    document.body.classList.remove('can-install');
+  });
+
+  installButton.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    document.body.classList.remove('can-install');
+  });
+}
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    await navigator.serviceWorker.register('./sw.js');
+  } catch (error) {
+    console.error('Service worker registration failed', error);
+  }
+}
 
 // ── CLOCK ────────────────────────────────────────────────────────────────────
 function updateClock() {
@@ -2250,6 +2325,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (isViewOnly) {
     document.body.classList.add('view-only');
   }
+  setupInstallPrompt();
+  registerServiceWorker();
   // Set today's date defaults
   const today = todayStr();
   document.getElementById('f-checkin').value  = today;
