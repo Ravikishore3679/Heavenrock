@@ -1478,9 +1478,7 @@ async function refreshRemoteData(options = {}) {
   const { force = false } = options;
   if (!isRemoteEnabled()) return;
 
-  const now = Date.now();
   if (!force && remoteLoadPromise) return remoteLoadPromise;
-  if (!force && now - lastRemoteLoadAt < REMOTE_REFRESH_INTERVAL_MS) return;
 
   remoteLoadPromise = loadRemoteData()
     .then(() => {
@@ -1552,7 +1550,6 @@ let expenditures = [];
 let editingId = null;
 let lastRemoteLoadAt = 0;
 let remoteLoadPromise = null;
-const REMOTE_REFRESH_INTERVAL_MS = 30000;
 
 async function removeAppShell() {
   if (!('serviceWorker' in navigator)) return;
@@ -2451,11 +2448,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     setSyncStatus('Connection restored. Refreshing latest data…', 'info', true);
     refreshRemoteData({ force: true }).catch(() => {});
   });
-  setInterval(() => {
-    if (document.visibilityState === 'visible') {
-      refreshRemoteData().catch(() => {});
-    }
-  }, REMOTE_REFRESH_INTERVAL_MS);
   // Render pages and apply dashboard preference (dashboard hidden by default)
   try { renderTodayPage(); } catch(e){}
   try { renderBookingsPage(); } catch(e){}
