@@ -1440,7 +1440,7 @@ async function loadRemoteData() {
   if (bookingError) {
     console.error('Unable to load bookings from Supabase', bookingError);
     setSyncStatus('Unable to load latest bookings. Check internet and tap Refresh Data.', 'error', true);
-    return;
+    throw bookingError;
   }
 
   bookings = (remoteBookings || []).map(normalizeBookingRow);
@@ -1453,7 +1453,7 @@ async function loadRemoteData() {
   if (expError) {
     console.error('Unable to load expenditures from Supabase', expError);
     setSyncStatus('Bookings loaded, but expenditure sync failed. Tap Refresh Data to retry.', 'error', true);
-    return;
+    throw expError;
   }
 
   expenditures = (remoteExpenditures || []).map(normalizeExpenditureRow);
@@ -1476,6 +1476,10 @@ async function refreshRemoteData(options = {}) {
   remoteLoadPromise = loadRemoteData()
     .then(() => {
       lastRemoteLoadAt = Date.now();
+    })
+    .catch((error) => {
+      console.error('Remote refresh failed', error);
+      throw error;
     })
     .finally(() => {
       remoteLoadPromise = null;
@@ -1881,6 +1885,7 @@ async function saveBooking() {
 
   const synced = await syncBookingToRemote(booking);
   bookings.push(synced);
+  await refreshRemoteData({ force: true });
   revealBookingInList(synced.id);
   renderTodayPage();
   renderDashboard();
@@ -1952,6 +1957,7 @@ async function updateBooking() {
   };
   const synced = await syncBookingToRemote(bookings[idx]);
   bookings[idx] = synced;
+  await refreshRemoteData({ force: true });
   closeEditModal();
   revealBookingInList(synced.id);
   renderTodayPage();
@@ -2138,6 +2144,7 @@ async function deleteBooking(id) {
   if (!confirm('Delete this booking? This cannot be undone.')) return;
   bookings = bookings.filter(b => b.id !== id);
   await deleteRemoteBooking(id);
+  await refreshRemoteData({ force: true });
   renderBookingsPage();
   renderTodayPage();
   renderDashboard();
@@ -2162,6 +2169,7 @@ async function saveExpenditure() {
   const exp = { id: Date.now(), date, descr, cat, amount: parseFloat(amount) };
   const synced = await syncExpenditureToRemote(exp);
   expenditures.push(synced || exp);
+  await refreshRemoteData({ force: true });
   document.getElementById('e-date').value = '';
   document.getElementById('e-desc').value = '';
   document.getElementById('e-amount').value = '';
@@ -2178,6 +2186,7 @@ async function deleteExpenditure(id) {
   if (!confirm('Delete this expenditure entry?')) return;
   expenditures = expenditures.filter(e => e.id !== id);
   await deleteRemoteExpenditure(id);
+  await refreshRemoteData({ force: true });
   renderExpenditurePage();
   renderDashboard();
 }
@@ -2427,6 +2436,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshRemoteData({ force: true }).catch(() => {});
   });
   window.addEventListener('focus', () => {
+    refreshRemoteData({ force: true }).catch(() => {});
+  });
+  window.addEventListener('online', () => {
+    setSyncStatus('Connection restored. Refreshing latest data…', 'info', true);
     refreshRemoteData({ force: true }).catch(() => {});
   });
   setInterval(() => {
